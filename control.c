@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <string.h>
-#include <sys/shm.h>
-#include <fcntl.h>
-#include <errno.h>
+#include "headers.h"
 
 void print_file(char *file) {
 	FILE *f = fopen(file, "r");
@@ -25,15 +16,13 @@ void print_file(char *file) {
 int main(int argc, char* argv[]) {
 	
 	umask(0000);
-	
-	int semKEY = 12345;
-	int shmKEY = 13579;
 
 	if (argv[1] == NULL) {
 		printf("Please enter in an argument.\n");
 		exit(1);
 	}
 	
+	int shmID;
 	int semID = semget(semKEY, 1, IPC_CREAT | 0644);
 	if (semID == -1) {
 		printf("Error: %s\n", strerror(errno));
@@ -43,8 +32,8 @@ int main(int argc, char* argv[]) {
 	if (strcmp(argv[1], "-c") == 0) {
 		//Should make the shared memory, semaphore and file (open the file with the truncate flag). 
 		//Set any values that are needed.
-		int shm = shmget(shmKEY, sizeof(int), IPC_CREAT | IPC_EXCL | 0644);
-		if (shm == -1) {
+		int shmID = shmget(shmKEY, sizeof(int), IPC_CREAT | IPC_EXCL | 0644);
+		if (shmID == -1) {
 			printf("Error: %s\n", strerror(errno));
 			return 1;
 		}
@@ -58,18 +47,20 @@ int main(int argc, char* argv[]) {
 		union semun value;
 		value.val = 1;
 
-		semID = semctl(semID, 0, SETVAL, value);
-		if (semID == -1) {
+		if ((semctl(semID, 0, SETVAL, value)) == -1) {
 			printf("Error: %s\n", strerror(errno));
 			return 1;
 		}
 
 		close(fd);
-		printf("story.txt created!\n");
+		printf("story.txt created!\n\n");
+		printf("semaphore created: %d\n", semID);
+		printf("shared memory created: %d\n", shmID);
 	}
 	
 	if (strcmp(argv[1], "-v") == 0) {
 		// Output the contents of the story file. 
+		printf("Entire story:\n");
 		print_file("story.txt");
 	}
 	
@@ -84,21 +75,22 @@ int main(int argc, char* argv[]) {
 			return 1;
 		}
 
-		int shm = shmget(shmKEY, sizeof(int), 0);
-		if (shm == -1) {
+		shmID = shmget(shmKEY, sizeof(int), 0);
+		if (shmID == -1) {
 			printf("Error: %s\n", strerror(errno));
 			return 1;
 		}
 		
 		struct shmid_ds buf;
-		shm = shmctl(shm, IPC_RMID, &buf);
-		if (shm == -1) {
+		shmID = shmctl(shmID, IPC_RMID, &buf);
+		if (shmID == -1) {
 			printf("Error: %s\n", strerror(errno));
 			return 1;
 		}
 		
-		printf("shared memory deleted: %d\n", shm);
+		printf("shared memory deleted: %d\n", shmID);
 		printf("semaphone deleted: %d\n", semID);
+		printf("\nEntire story:\n");
 		print_file("story.txt");
 		
 	}
