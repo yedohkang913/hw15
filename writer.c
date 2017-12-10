@@ -13,14 +13,23 @@ int main() {
 		return 1;
 	}
 	
-	struct sembuf sb;
-	sb.sem_num = 0;
-	sb.sem_flg = SEM_UNDO;
-	sb.sem_op = -1;
-	if (semop(semID, &sb, 1) == -1) {
-		printf("Error: %s\n", strerror(errno));
-		return 1;
-	}
+	printf("1. test\n");
+	
+	struct sembuf sb_down;
+	sb_down.sem_num = 0;
+	sb_down.sem_flg = SEM_UNDO;
+	sb_down.sem_op = -1;
+	
+	struct sembuf sb_up;
+	sb_up.sem_num = 0;
+	sb_up.sem_flg = SEM_UNDO;
+	sb_up.sem_op = 1;
+	
+	printf("hello\n");
+	
+	//semop(semID, &sb_down, 1);
+	
+	printf("2. test\n");
 	
 	int shm = shmget(shmKEY, sizeof(int), 0644);
 	if (shm == -1) {
@@ -54,8 +63,8 @@ int main() {
 	*length = strlen(input);
 	shmdt(length);
 	
-	sb.sem_op = 1;
-	semop(semID, &sb, 1);
+	sb_up.sem_op = 1;
+	semop(semID, &sb_up, 1);
 	
 	return 0;
 }
